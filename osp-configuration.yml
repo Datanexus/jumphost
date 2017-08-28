@@ -1,0 +1,22 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+#
+# example OSP instance
+---
+cloud: osp
+tenant: TENANT
+project: PROJECT
+domain: DOMAIN
+application: jumphost
+region: OSP_REGION
+count: COUNT
+user: USER
+image: AMI_UUID
+type: TYPE
+root_volume: SIZE
+internal_uuid: SUBNET_UUID
+external_uuid: SUBNET_UUID
+internal_subnet: SUBNET
+external_subnet: SUBNET
+float_pool: FLOAT
+zone: ZONE 
+http_proxy: PROXY
