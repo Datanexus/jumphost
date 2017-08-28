@@ -1,0 +1,19 @@
+#!/usr/bin/env ansible-playbook
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+#
+# clone http_proxy code
+---
+- name: grabbing any additional repositories necessary
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - "{{ configuration }}"
+  vars:
+    owner: "{{ github | default ('datanexus') }}"
+  tasks:
+    - name: cloning https://github.com/{{ owner }}/http-proxy
+      git:
+        repo: "https://github.com/{{ owner }}/http-proxy.git"
+        update: yes
+        dest: http-proxy
