@@ -135,3 +135,9 @@ You should get a shell prompt on the jumphost.
 
     Last login: Mon Aug 28 19:29:19 2017 from 121-195-24-147.dhcp.nc.charter.com
     [centos@jumphost-1619e612b02e482b8575021802c908e1 ~]$
+
+### cleanup
+
+Cleanup:
+
+    AWS_PROFILE=datanexus ./cleanup-jumphost -e "configuration=aws-demo.yml"
