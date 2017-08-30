@@ -5,16 +5,16 @@ export AWS_PROFILE=datanexus    # set this to the desired AWS profile in ~/.aws/
 
 if [ "$1" == "-h" ] ; then
     echo "Usage:  `basename $0` [-h]\t\thelp"
-    echo "\t`basename $0` [aws | osp]\tuse either the aws or osp configuration file"
+    echo "\t`basename $0` [aws | osp | FILE]\tuse aws, osp, or FILE configuration file"
     exit 0
 fi
 
-if [ $1 == "aws" ]; then
-  export cloud=aws
-elif [ $1 == "osp" ]; then
-  export cloud=osp
+if [ $1 == "aws" ] || [ $1 == "osp" ]; then
+  export configuration="$1-configuration.yml"
+else
+  export configuration="$1"
 fi
 
-./initialize -e "configuration=$cloud-configuration.yml"
-echo "running with $cloud configuration..."
-./provision-postgresql -e "configuration=$cloud-configuration.yml"
+./initialize -e "configuration=$configuration"
+echo "running with $configuration configuration..."
+./provision-jumphost -e "configuration=$configuration"
