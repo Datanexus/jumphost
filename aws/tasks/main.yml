@@ -184,7 +184,7 @@
     create: yes
     insertafter: EOF
     path: "{{ ansible_env.HOME }}/.ssh/config"
-    marker: "# jumphost {mark} ANISBLE MANAGED BLOCK"
+    marker: "# jumphost {mark} ANSIBLE MANAGED BLOCK"
     block: |
       Host dn_jumphost
           Hostname {{ ec2.instances.0.public_ip }}
