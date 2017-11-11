@@ -2,34 +2,29 @@
 #
 # OS tasks that occur post-boot and pre-appplication installation
 ---
-
 # in a jumphost, eth1 is always private internal
 - set_fact:
     private_internal_interface: eth1
   when:
     - internal_subnet is defined
 
-- name: adding ifcfg-{{ private_internal_interface }} script
+- name: creating ifcfg-{{ private_internal_interface }}
   become: true
-  command: /usr/bin/cp /etc/sysconfig/network-scripts/ifcfg-eth0 "/etc/sysconfig/network-scripts/ifcfg-{{ private_internal_interface }}" creates="/etc/sysconfig/network-scripts/ifcfg-{{ private_internal_interface }}" 
+  blockinfile:
+    path: "/etc/sysconfig/network-scripts/ifcfg-{{ private_internal_interface }}"
+    create: yes
+    mode: 0644
+    block: |
+      BOOTPROTO=dhcp
+      DEVICE={{ private_internal_interface }}
+      ONBOOT=yes
+      TYPE=Ethernet
+      USERCTL=no
+      DEFROUTE=no
   when:
     - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
     - private_internal_interface is defined
-
-- name: configuring ifcfg-{{ private_internal_interface }} interface
-  become: true
-  lineinfile: name="/etc/sysconfig/network-scripts/ifcfg-{{ private_internal_interface }}" regexp='^DEVICE=' line='DEVICE="{{ private_internal_interface }}"'
-  when:
-    - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
-    - private_internal_interface is defined
-
-- name: configuring no default route on eth1 for {{ application }}
-  become: true
-  lineinfile: name="/etc/sysconfig/network-scripts/ifcfg-eth1" regexp='^DEFROUTE=' line='DEFROUTE="no"'
-  when:
-    - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
-    - private_internal_interface is defined
-
+  
 - name: restart networking
   become: true
   systemd: "name=network state=restarted"

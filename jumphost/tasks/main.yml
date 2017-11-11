@@ -3,8 +3,8 @@
 #
 ---    
 # facts configuration.
-- include: facts.yml
-- include: interface-facts.yml
+- include_tasks: facts.yml
+- include_tasks: interface-facts.yml
 
 - name: installing postgresql and epel repos
   become: true
