@@ -6,6 +6,7 @@
 - name: launching VM
   vars_files:
     - "{{ configuration }}"
+    - vars/jumphost.yml
   hosts: localhost
   connection: local
   gather_facts: true
@@ -18,6 +19,7 @@
   hosts: "{{ application }}"
   vars_files:
     - "{{ configuration }}"
+    - vars/jumphost.yml
   gather_facts: yes
   roles:
     - { role: preflight }
