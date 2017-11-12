@@ -1,4 +1,4 @@
-#!/usr/bin/env ansible-playbook -vvv
+#!/usr/bin/env ansible-playbook
 # (c) 2016 DataNexus Inc.  All Rights Reserved.
 #
 # main routine for provisioning postgresql
