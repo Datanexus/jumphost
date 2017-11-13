@@ -91,20 +91,20 @@
         cidr_ip: 0.0.0.0/0
   register: sg_ssh
 
-- name: checking {{ region }}-{{ application }}-private-key.pem
-  stat: path="./{{ region }}-{{ application }}-private-key.pem"
+- name: checking {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-private-key.pem
+  stat: path="./{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-private-key.pem"
   register: existing_key
 
 - block: 
-  - name: generating public key from {{ region }}-{{ application }}-private-key.pem
-    command: "/usr/bin/ssh-keygen -f {{ region }}-{{ application }}-private-key.pem -y"
+  - name: generating public key from {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-private-key.pem
+    command: "/usr/bin/ssh-keygen -f {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-private-key.pem -y"
     register: public_key_from_pem
     
-  - name: using existing {{ region }}-{{ application }}
+  - name: using existing {{ cloud }}-{{ region }}-{{ project }}-{{ application }}
     ec2_key:
       region: "{{ region }}"
       state: present
-      name: "{{ region }}-{{ application }}"
+      name: "{{ cloud }}-{{ region }}-{{ project }}-{{ application }}"
       key_material: "{{ public_key_from_pem.stdout }}" 
     register: old_keypair
 
@@ -113,15 +113,15 @@
     - existing_key.stat.exists
 
 - block:
-  - name: creating {{ region}}-{{ application }}
+  - name: creating {{ cloud }}-{{ region}}-{{ project }}-{{ application }}
     ec2_key:
-      name: "{{ region }}-{{ application }}"
+      name: "{{ cloud }}-{{ region }}-{{ project }}-{{ application }}"
       region: "{{ region }}"
     register: new_keypair
     
   - set_fact: keypair="{{ new_keypair }}"
 
-  - name: saving {{ region }}-{{ application }}
+  - name: saving {{ cloud }}-{{ region }}-{{ project }}-{{ application }}
     copy:
       dest: "./{{ keypair.key.name }}-private-key.pem"
       content: "{{ keypair.key.private_key }}"
