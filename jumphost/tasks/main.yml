@@ -3,6 +3,5 @@
 #
 ---    
 # facts configuration.
-- include_tasks: facts.yml
 - include_tasks: interface-facts.yml
 
