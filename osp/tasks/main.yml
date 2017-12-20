@@ -37,12 +37,12 @@
     state: present
     name: "{{ project }}_{{ application }}"
     description: "{{ application }} ingress and unrestricted egress rules (ansible)"
-  register: dnsg_postgresql
+  register: dnsg_jumphost
 
-- name: adding ports to {{ dnsg_postgresql.secgroup.description }}
+- name: adding ports to {{ dnsg_jumphost.secgroup.description }}
   os_security_group_rule:
     cloud: "{{ tenant }}"
-    security_group: "{{ dnsg_postgresql.id }}"
+    security_group: "{{ dnsg_jumphost.id }}"
     protocol: tcp
     port_range_min: 5432
     port_range_max: 5432
@@ -101,7 +101,7 @@
   when: 
     - not existing_key.stat.exists
 
-# always boot a single postgresql server
+# always boot a single server
 - name: setting count to single node
   set_fact:
     count: 1
@@ -283,16 +283,16 @@
     - not osp|skipped and osp.changed and osp.results|length > 0
 
 # create openstack hosts file because metadata tag support for OSP is weak; note that this is simply a convenience for any follow-on playbooks
-- name: configuring openstack postgresql hosts file
+- name: configuring openstack jumphost hosts file
   lineinfile:
     create: yes
     state: present
     path: "{{ ansible_env.PWD }}/{{ project }}-{{ application }}.hostfile"
-    line: '[postgresql]'
+    line: '[jumphost]'
   when:
     - not osp | skipped and osp.changed and osp.results | length > 0
 
-- name: configuring openstack postgresql hosts file
+- name: configuring openstack jumphost hosts file
   lineinfile:
     state: present
     path: "{{ ansible_env.PWD }}/{{ project }}-{{ application }}.hostfile"
