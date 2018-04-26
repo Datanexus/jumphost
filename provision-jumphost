@@ -17,7 +17,6 @@
           
     - include_role:
         name: azure
-        tasks_from: discover-resourcegroup
       when: cloud == 'azure'
          
 #    - { role: osp, when: cloud == 'osp' }

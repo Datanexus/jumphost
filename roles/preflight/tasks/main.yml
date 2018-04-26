@@ -8,28 +8,30 @@
   when:
     - internal_subnet is defined
 
-- name: creating ifcfg-{{ private_internal_interface }}
-  become: true
-  blockinfile:
-    path: "/etc/sysconfig/network-scripts/ifcfg-{{ private_internal_interface }}"
-    create: yes
-    mode: 0644
-    block: |
-      BOOTPROTO=dhcp
-      DEVICE={{ private_internal_interface }}
-      ONBOOT=yes
-      TYPE=Ethernet
-      USERCTL=no
-      DEFROUTE=no
-  when:
-    - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
-    - private_internal_interface is defined
+- block:
+  - name: creating ifcfg-{{ private_internal_interface }}
+    become: true
+    blockinfile:
+      path: "/etc/sysconfig/network-scripts/ifcfg-{{ private_internal_interface }}"
+      create: yes
+      mode: 0644
+      block: |
+        BOOTPROTO=dhcp
+        DEVICE={{ private_internal_interface }}
+        ONBOOT=yes
+        TYPE=Ethernet
+        USERCTL=no
+        DEFROUTE=no
+    when:
+      - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+      - private_internal_interface is defined
   
-- name: restart networking
-  become: true
-  systemd: "name=network state=restarted"
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
-      
+  - name: restart networking
+    become: true
+    systemd: "name=network state=restarted"
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+  when: cloud == 'aws' or cloud == 'osp'
+   
 - name: ensure sshd_config is writable
   command: /bin/chattr -i /etc/ssh/sshd_config
   become: true
@@ -96,6 +98,7 @@
     - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
 
 # community CentOS AMI ships with postfix enabled so we need to disable it
+# note that this will fail idempotency if the package doesn't exist because it was removed
 - name: stopping postfix
   service:
     name: postfix

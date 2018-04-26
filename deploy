@@ -15,6 +15,6 @@ else
   export configuration="$1"
 fi
 
-./initialize -e "configuration=$configuration"
+#./initialize -e "configuration=$configuration"
 echo "running with $configuration configuration..."
 ./provision-jumphost -e "configuration=$configuration"
