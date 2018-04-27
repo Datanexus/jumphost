@@ -49,12 +49,13 @@
     name: "dnsg_{{ project }}_ssh_public_external"
     purge_rules: yes
     rules:
-      - name: DenySSH
-        proto: TCP
-        destination_port_range: 22
+      - name: DenyAll
+        proto: '*'
+        destination_port_range: 1-65535
         access: Deny
         priority: 100
         direction: Inbound
+        source_address_prefix: '*'
       - name: AllowSSH
         proto: TCP
         destination_port_range: 22
@@ -71,11 +72,12 @@
     purge_rules: yes
     rules:
       - name: DenyAll
-        proto: TCP
+        proto: '*'
         destination_port_range: 1-65535
         access: Deny
         priority: 100
         direction: Inbound
+        source_address_prefix: '*'
   register: sg_closed
 
 - name: JUMPHOST Azure | setting key path to {{ key_path }}
