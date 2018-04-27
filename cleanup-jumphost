@@ -130,6 +130,7 @@
           name: "{{ item }}"
           state: absent
         with_items:
-          - "dnsg_{{ project }}_closed"
-          - "dnsg_{{ project }}_ssh_private_internal"
+          - "dnsg_{{ project }}_ssh_private_external"
+          - "{{ project }}_{{ application }}_external"
+          - "{{ project }}_{{ application }}_internal"
       when: cloud == 'azure'

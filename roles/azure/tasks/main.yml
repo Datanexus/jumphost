@@ -46,7 +46,7 @@
 - name: JUMPHOST Azure | creating ssh security group
   azure_rm_securitygroup:
     resource_group: "{{ specified_resourcegroup.name }}"
-    name: "dnsg_{{ project }}_ssh_private_internal"
+    name: "dnsg_{{ project }}_ssh_public_external"
     purge_rules: yes
     rules:
       - name: DenySSH
@@ -61,7 +61,7 @@
         access: Allow
         priority: 101
         direction: Inbound
-        source_address_prefix: "{{ internal_private_subnet_result.properties.addressPrefix }}"
+        source_address_prefix: '*'
   register: sg_ssh_private
 
 - name: JUMPHOST Azure | creating closed security group
@@ -107,7 +107,7 @@
     name: "{{ project }}_{{ application }}_external"
     virtual_network: "{{ virtualnetwork_by_name.ansible_facts.azure_virtualnetworks.0.name }}"
     subnet_name: '{{ internal_public_subnet_result.name }}'
-    security_group: "dnsg_{{ project }}_{{ application }}_public_internal"
+    security_group: "dnsg_{{ project }}_ssh_public_external"
     ip_configurations:
       - name: ipconfig1
         public_ip_address_name: "{{ project }}_{{ application }}_external_ip"
@@ -122,7 +122,7 @@
     name: "{{ project }}_{{ application }}_internal"    
     virtual_network: "{{ virtualnetwork_by_name.ansible_facts.azure_virtualnetworks.0.name }}"
     subnet_name: "{{ internal_private_subnet_result.name }}"
-    security_group: "dnsg_{{ project }}_ssh_private_internal"
+    security_group: "dnsg_{{ project }}_closed"
     ip_configurations:
       - name: ipconfig1
         primary: yes
@@ -132,7 +132,7 @@
 
 # this is not necessarily idempotent because we're shelling out
 - name: JUMPHOST Azure | creating {{ application }} VM in {{ specified_resourcegroup.name }}
-  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }} --location {{ region }} --nics {{ project }}_{{ application }}_external {{ project }}_{{ application }}_internal  --size {{ image | default('Standard_D8_v3') }} --os-disk-size-gb {{ root_volume }} --image Centos --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
+  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }} --location {{ region }} --nics {{ project }}_{{ application }}_external {{ project }}_{{ application }}_internal  --size {{ image | default('Standard_D8_v3') }} --image Centos --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
 
 - name: JUMPHOST Azure | discovering {{ application }}
   azure_rm_publicipaddress_facts:
