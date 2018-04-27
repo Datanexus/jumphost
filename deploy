@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 # (c) Copyright 2016 DataNexus Inc.  All Rights Reserved. 
 
 export AWS_PROFILE=datanexus    # set this to the desired AWS profile in ~/.aws/credentials
@@ -15,6 +15,6 @@ else
   export configuration="$1"
 fi
 
-./initialize -e "configuration=$configuration"
+#./initialize -e "configuration=$configuration"
 echo "running with $configuration configuration..."
 ./provision-jumphost -e "configuration=$configuration"
