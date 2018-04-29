@@ -123,6 +123,12 @@
     tags:
       Application: "{{ application }}"
       Role: "{{ role | default ('none') }}"
+      Tenant: "{{ tenant }}"
+      Project: "{{ project }}"
+      Cloud: "{{ cloud }}"
+      Domain: "{{ domain }}"
+      Cluster: "{{ cluster | default ('none') }}"
+      Dataflow: "{{ dataflow | default ('none') }}"
         
 - name: JUMPHOST Azure | creating {{ application }} virtual {{ project }}_{{ application }}_internal NIC
   azure_rm_networkinterface:
@@ -137,6 +143,12 @@
     tags:
       Application: "{{ application }}"  
       Role: "{{ role | default ('none') }}"
+      Tenant: "{{ tenant }}"
+      Project: "{{ project }}"
+      Cloud: "{{ cloud }}"
+      Domain: "{{ domain }}"
+      Cluster: "{{ cluster | default ('none') }}"
+      Dataflow: "{{ dataflow | default ('none') }}"
 
 # this is not necessarily idempotent because we're shelling out
 - name: JUMPHOST Azure | creating {{ application }} VM in {{ specified_resourcegroup.name }}
