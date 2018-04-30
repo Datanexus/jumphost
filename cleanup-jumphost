@@ -131,6 +131,7 @@
           state: absent
         with_items:
           - "dnsg_{{ project }}_ssh_private_external"
+          - "dnsg_{{ project }}_closed"
           - "{{ project }}_{{ application }}_external"
           - "{{ project }}_{{ application }}_internal"
       when: cloud == 'azure'
