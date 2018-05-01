@@ -175,7 +175,7 @@
     path: "{{ ansible_env.HOME }}/.ssh/config"
     marker: "# jumphost {mark} ANSIBLE MANAGED BLOCK"
     block: |
-      Host dn_jumphost
+      Host {{ tenant }}_jumphost_{{ domain }}
           Hostname {{ found_jumphosts.ansible_facts.azure_publicipaddresses.0.properties.ipAddress }}
           User centos
           IdentityFile {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
@@ -185,10 +185,7 @@
           User centos
           IdentitiesOnly yes
           StrictHostKeyChecking no
-          ProxyCommand ssh dn_jumphost -W %h:%p
-  # when:
-  #   - not ec2 | skipped and ec2.changed and ec2.instances | length > 0
-
+          ProxyCommand ssh {{ tenant }}_jumphost_{{ domain }} -W %h:%p
 
 # # wait_for doesn't work with a proxy, so we need to ssh and check output
 # - name: JUMPHOST | waiting for {{ item }} with {{ keypair.key.name }}-private-key.pem"
