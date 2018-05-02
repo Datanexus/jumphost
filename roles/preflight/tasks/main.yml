@@ -99,7 +99,7 @@
 
 # community CentOS AMI ships with postfix enabled so we need to disable it
 # note that this will fail idempotency if the package doesn't exist because it was removed
-- name: stopping postfix
+- name: GENERIC PREFLIGHT OVERLAY | stopping postfix
   service:
     name: postfix
     state: stopped
@@ -107,9 +107,34 @@
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'  
   
 # annnnd remove it
-- name: removing postfix
+- name: GENERIC PREFLIGHT OVERLAY | removing postfix
   package:
     name: postfix
     state: absent
   become: true
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+# community CentOS image ships with dnsmasq enabled so we need to disable it
+- name: GENERIC PREFLIGHT OVERLAY | stopping dnsmasq
+  service:
+    name: dnsmasq
+    state: stopped
+    enabled: no
+  become: true
+  when:
+    - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+    - cloud == 'azure'
+    
+# community CentOS image ships with rpcbind enabled; we don't use NFS by default so disable it
+- name: GENERIC PREFLIGHT OVERLAY | stopping rpcbind
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  become: true
+  with_items:
+    - rpcbind
+    - rpcbind.socket
+  when:
+    - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+    - cloud == 'azure'
