@@ -16,7 +16,7 @@
 # (c) 2016 DataNexus Inc.  All Rights Reserved.
 #
 # discover Azure resource groups, virtual networks, and subnets
-
+  
 - name: JUMPHOST Azure | retrieving resource group by name
   azure_rm_resourcegroup_facts:
     name: "{{ project }}_{{ domain }}"
@@ -152,7 +152,7 @@
 
 # this is not necessarily idempotent because we're shelling out
 - name: JUMPHOST Azure | creating {{ application }} VM in {{ specified_resourcegroup.name }}
-  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }} --location {{ region }} --nics {{ project }}_{{ application }}_external {{ project }}_{{ application }}_internal  --size {{ image | default('Standard_D8_v3') }} --image Centos --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
+  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }} --location {{ region }} --nics {{ project }}_{{ application }}_external {{ project }}_{{ application }}_internal  --size {{ image | default('Standard_B1s') }} --image Centos --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
 
 - name: JUMPHOST Azure | discovering {{ application }}
   azure_rm_publicipaddress_facts:
@@ -164,7 +164,16 @@
   add_host: hostname="{{ item.properties.ipAddress }}" groupname=jumphost ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
   with_items: "{{ found_jumphosts.ansible_facts.azure_publicipaddresses }}"
 
-- local_action: shell echo "{{ internal_subnet }}" | /bin/sed 's/0\/24/*/'
+# handle execution on either macos or linux
+- set_fact:
+    sed_location: /usr/bin
+  when:  ansible_distribution  == 'MacOSX'
+
+- set_fact:
+    sed_location: /bin
+  when:  ansible_distribution  == 'CentOS'
+  
+- local_action: shell echo "{{ internal_subnet }}" | "{{ sed_location }}"/sed 's/0\/24/*/'
   register: private_wildcard
     
 - name: JUMPHOST Azure | configuring ssh for platform access
@@ -173,9 +182,9 @@
     create: yes
     insertafter: EOF
     path: "{{ ansible_env.HOME }}/.ssh/config"
-    marker: "# jumphost {mark} ANSIBLE MANAGED BLOCK"
+    marker: "# {{ cloud }} jumphost {mark} ANSIBLE MANAGED BLOCK"
     block: |
-      Host {{ tenant }}_jumphost_{{ domain }}
+      Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}
           Hostname {{ found_jumphosts.ansible_facts.azure_publicipaddresses.0.properties.ipAddress }}
           User centos
           IdentityFile {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
