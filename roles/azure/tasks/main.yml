@@ -16,7 +16,7 @@
 # (c) 2016 DataNexus Inc.  All Rights Reserved.
 #
 # discover Azure resource groups, virtual networks, and subnets
-  
+    
 - name: JUMPHOST Azure | retrieving resource group by name
   azure_rm_resourcegroup_facts:
     name: "{{ project }}_{{ domain }}"
@@ -171,7 +171,7 @@
 
 - set_fact:
     sed_location: /bin
-  when:  ansible_distribution  == 'CentOS'
+  when: ansible_distribution  == 'CentOS' or ansible_distribution == 'RedHat' or ansible_distribution == 'Ubuntu'
   
 - local_action: shell echo "{{ internal_subnet }}" | "{{ sed_location }}"/sed 's/0\/24/*/'
   register: private_wildcard
