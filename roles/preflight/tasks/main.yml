@@ -9,7 +9,7 @@
     - internal_subnet is defined
 
 - block:
-  - name: creating ifcfg-{{ private_internal_interface }}
+  - name: JUMPHOST PREFLIGHT OVERLAY | creating ifcfg-{{ private_internal_interface }}
     become: true
     blockinfile:
       path: "/etc/sysconfig/network-scripts/ifcfg-{{ private_internal_interface }}"
@@ -26,17 +26,17 @@
       - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
       - private_internal_interface is defined
   
-  - name: restart networking
+  - name: JUMPHOST PREFLIGHT OVERLAY | restart networking
     become: true
     systemd: "name=network state=restarted"
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
   when: cloud == 'aws' or cloud == 'osp'
    
-- name: ensure sshd_config is writable
+- name: JUMPHOST PREFLIGHT OVERLAY | ensure sshd_config is writable
   command: /bin/chattr -i /etc/ssh/sshd_config
   become: true
   
-- name: ensuring sshd listens on provisioning network
+- name: JUMPHOST PREFLIGHT OVERLAY | ensuring sshd listens on provisioning network
   lineinfile:
     dest: /etc/ssh/sshd_config
     regexp: "^#ListenAddress 0.0.0.0"
@@ -44,39 +44,39 @@
     line: "ListenAddress {{ hostvars[inventory_hostname].ansible_default_ipv4.address }}"
   become: true
 
-- name: restart sshd
+- name: JUMPHOST PREFLIGHT OVERLAY | restart sshd
   service:
      name: sshd
      state: restarted
   become: true
 
-- name: generating UUID
+- name: JUMPHOST PREFLIGHT OVERLAY | generating UUID
   shell: /usr/bin/uuidgen | /usr/bin/tr -d \-
   register: uuid
   become: true
 
 # the lineinfile plays aren't intended to be idempotent
 - block:
-  - name: setting hostname actively so rebooting is unnecessary
+  - name: JUMPHOST PREFLIGHT OVERLAY | setting hostname actively so rebooting is unnecessary
     command: /usr/bin/hostnamectl set-hostname {{ application }}-{{ uuid.stdout }}
 
-  - name: setting pretty hostname actively so rebooting is unnecessary
+  - name: JUMPHOST PREFLIGHT OVERLAY | setting pretty hostname actively so rebooting is unnecessary
     command: /usr/bin/hostnamectl --pretty set-hostname "{{ tenant }} {{ application }}"  
 
-  - name: setting hostname in /etc/hostname
+  - name: JUMPHOST PREFLIGHT OVERLAY | setting hostname in /etc/hostname
     replace:
       path: /etc/hostname
       regexp: "{{ hostvars[inventory_hostname].ansible_hostname }}.ec2.internal"
       replace: "{{ application }}-{{ uuid.stdout }}.localdomain"
 
-  - name: setting {{ application }}-{{ uuid.stdout }}.localdomain in /etc/sysconfig/network
+  - name: JUMPHOST PREFLIGHT OVERLAY | setting {{ application }}-{{ uuid.stdout }}.localdomain in /etc/sysconfig/network
     lineinfile:
       dest: /etc/sysconfig/network
       state: present
       insertafter: EOF
       line: "HOSTNAME={{ application }}-{{ uuid.stdout }}.localdomain"
 
-  - name: setting {{ hostvars[inventory_hostname].ansible_eth0.ipv4.address }} to {{ application }}-{{ uuid.stdout }}.localdomain in /etc/hosts
+  - name: JUMPHOST PREFLIGHT OVERLAY | setting {{ hostvars[inventory_hostname].ansible_eth0.ipv4.address }} to {{ application }}-{{ uuid.stdout }}.localdomain in /etc/hosts
     lineinfile:
       dest: /etc/hosts
       insertafter: EOF
@@ -85,7 +85,7 @@
       # line: "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 {{ hostvars[inventory_hostname].ansible_hostname }}"
       line: "{{ hostvars[inventory_hostname].ansible_eth0.ipv4.address }}    {{ application }}-{{ uuid.stdout }}.localdomain {{ application }}-{{ uuid.stdout }} {{ application }}"
 
-  - name: ensuring hostname changes persist after reboot
+  - name: JUMPHOST PREFLIGHT OVERLAY | ensuring hostname changes persist after reboot
     lineinfile:
       dest: /etc/cloud/cloud.cfg
       state: present
@@ -99,7 +99,7 @@
 
 # community CentOS AMI ships with postfix enabled so we need to disable it
 # note that this will fail idempotency if the package doesn't exist because it was removed
-- name: GENERIC PREFLIGHT OVERLAY | stopping postfix
+- name: JUMPHOST PREFLIGHT OVERLAY | stopping postfix
   service:
     name: postfix
     state: stopped
@@ -107,7 +107,7 @@
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'  
   
 # annnnd remove it
-- name: GENERIC PREFLIGHT OVERLAY | removing postfix
+- name: JUMPHOST PREFLIGHT OVERLAY | removing postfix
   package:
     name: postfix
     state: absent
@@ -115,7 +115,7 @@
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
 
 # community CentOS image ships with dnsmasq enabled so we need to disable it
-- name: GENERIC PREFLIGHT OVERLAY | stopping dnsmasq
+- name: JUMPHOST PREFLIGHT OVERLAY | stopping dnsmasq
   service:
     name: dnsmasq
     state: stopped
@@ -126,7 +126,7 @@
     - cloud == 'azure'
     
 # community CentOS image ships with rpcbind enabled; we don't use NFS by default so disable it
-- name: GENERIC PREFLIGHT OVERLAY | stopping rpcbind
+- name: JUMPHOST PREFLIGHT OVERLAY | stopping rpcbind
   service:
     name: "{{ item }}"
     state: stopped
