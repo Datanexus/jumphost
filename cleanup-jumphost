@@ -1,7 +1,7 @@
 #!/usr/bin/env ansible-playbook
 # (c) 2016 DataNexus Inc.  All Rights Reserved. 
 #
-# remove postgresql instances
+# remove jumphost instances
 ---
 - hosts: localhost
   vars_files:
@@ -121,7 +121,6 @@
           name: "{{ item }}"
           state: absent
         with_items:
-          - "{{ project }}_{{ application }}_internal_ip"
           - "{{ project }}_{{ application }}_external_ip"
 
       - name: JUMPHOST OVERLAY | deleting all security groups
@@ -130,7 +129,7 @@
           name: "{{ item }}"
           state: absent
         with_items:
-          - "dnsg_{{ project }}_ssh_private_external"
+          - "dnsg_{{ project }}_ssh_public_external"
           - "dnsg_{{ project }}_closed"
           - "{{ project }}_{{ application }}_external"
           - "{{ project }}_{{ application }}_internal"
