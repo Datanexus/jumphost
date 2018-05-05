@@ -4,6 +4,7 @@
 # remove jumphost instances
 ---
 - hosts: localhost
+  connection: local
   vars_files:
     - "{{ configuration }}"
   gather_facts: true  
