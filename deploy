@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # (c) Copyright 2016 DataNexus Inc.  All Rights Reserved.
 
+export application=jumphost
 : "${AWS_PROFILE:=datanexus}" && export AWS_PROFILE="$AWS_PROFILE"    # sets this to a reasonable ~/.aws/credentials default
 : "${AZURE_PROFILE:=datanexus}" && export AZURE_PROFILE="$AZURE_PROFILE"    # sets this to a reasonable ~/.azure/credentials default
 
