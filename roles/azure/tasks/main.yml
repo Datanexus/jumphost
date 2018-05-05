@@ -152,7 +152,7 @@
 
 # this is not necessarily idempotent because we're shelling out
 - name: JUMPHOST Azure | creating {{ application }} VM in {{ specified_resourcegroup.name }}
-  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }} --location {{ region }} --nics {{ project }}_{{ application }}_external {{ project }}_{{ application }}_internal  --size {{ image | default('Standard_B1s') }} --image Centos --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
+  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }} --location {{ region }} --nics {{ project }}_{{ application }}_external {{ project }}_{{ application }}_internal  --size {{ type | default('Standard_B1s') }} --image {{ image | default('Centos') }} --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
 
 - name: JUMPHOST Azure | discovering {{ application }}
   azure_rm_publicipaddress_facts:

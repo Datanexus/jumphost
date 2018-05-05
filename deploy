@@ -1,11 +1,13 @@
 #!/usr/bin/env sh
 # (c) Copyright 2016 DataNexus Inc.  All Rights Reserved.
 
-export AWS_PROFILE=datanexus    # set this to the desired AWS profile in ~/.aws/credentials
+export application=jumphost
+: "${AWS_PROFILE:=datanexus}" && export AWS_PROFILE="$AWS_PROFILE"    # sets this to a reasonable ~/.aws/credentials default
+: "${AZURE_PROFILE:=datanexus}" && export AZURE_PROFILE="$AZURE_PROFILE"    # sets this to a reasonable ~/.azure/credentials default
 
 if [ "$1" = "-h" ] ; then
-    printf "Usage:  `basename %s` [-h]\\t\\thelp\\n" "$0"
-    printf "\\t`basename %s` [aws | osp | FILE]\\tuse aws, osp, or FILE configuration file\\n" "$0"
+    printf "Usage:  deploy [-h]\\t\\thelp\\n"
+    printf "\\tdeploy [aws | osp | FILE]\\tuse aws, osp, or FILE configuration file\\n"
     exit 0
 fi
 
