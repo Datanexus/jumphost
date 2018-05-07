@@ -92,20 +92,20 @@
         cidr_ip: 0.0.0.0/0
   register: sg_ssh
 
-- name: JUMPHOST AWS | checking {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-private-key.pem
-  stat: path="./{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-private-key.pem"
+- name: JUMPHOST AWS | checking {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
+  stat: path="./{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
   register: existing_key
 
 - block: 
-  - name: JUMPHOST AWS | generating public key from {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-private-key.pem
-    command: "/usr/bin/ssh-keygen -f {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-private-key.pem -y"
+  - name: JUMPHOST AWS | generating public key from {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
+    command: "/usr/bin/ssh-keygen -f {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem -y"
     register: public_key_from_pem
     
-  - name: JUMPHOST AWS | using existing {{ cloud }}-{{ region }}-{{ project }}-{{ application }}
+  - name: JUMPHOST AWS | using existing {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}
     ec2_key:
       region: "{{ region }}"
       state: present
-      name: "{{ region }}-{{ project }}-{{ application }}"
+      name: "{{ region }}-{{ project }}-{{ application }}-{{ domain }}"
       key_material: "{{ public_key_from_pem.stdout }}" 
     register: old_keypair
 
@@ -114,15 +114,15 @@
     - existing_key.stat.exists
 
 - block:
-  - name: JUMPHOST AWS | creating {{ cloud }}-{{ region}}-{{ project }}-{{ application }}
+  - name: JUMPHOST AWS | creating {{ cloud }}-{{ region}}-{{ project }}-{{ application }}-{{ domain }}
     ec2_key:
-      name: "{{ region }}-{{ project }}-{{ application }}"
+      name: "{{ region }}-{{ project }}-{{ application }}-{{ domain }}"
       region: "{{ region }}"
     register: new_keypair
     
   - set_fact: keypair="{{ new_keypair }}"
 
-  - name: JUMPHOST AWS | saving {{ cloud }}-{{ region }}-{{ project }}-{{ application }}
+  - name: JUMPHOST AWS | saving {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}
     copy:
       dest: "./{{ cloud }}-{{ keypair.key.name }}-private-key.pem"
       content: "{{ keypair.key.private_key }}"
