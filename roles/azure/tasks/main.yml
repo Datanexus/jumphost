@@ -16,7 +16,7 @@
 # (c) 2016 DataNexus Inc.  All Rights Reserved.
 #
 # discover Azure resource groups, virtual networks, and subnets
-    
+
 - name: JUMPHOST Azure | retrieving resource group by name
   azure_rm_resourcegroup_facts:
     name: "{{ project }}_{{ domain }}"
@@ -139,7 +139,7 @@
     security_group_name: "dnsg_{{ project }}_closed"
     ip_configurations:
       - name: ipconfig1
-        primary: yes
+        primary: no
     tags:
       Application: "{{ application }}"  
       Role: "{{ role | default ('none') }}"
@@ -153,6 +153,36 @@
 # this is not necessarily idempotent because we're shelling out
 - name: JUMPHOST Azure | creating {{ application }} VM in {{ specified_resourcegroup.name }}
   command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }} --location {{ region }} --nics {{ project }}_{{ application }}_external {{ project }}_{{ application }}_internal  --size {{ type | default('Standard_B1s') }} --image {{ image | default('Centos') }} --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
+
+# multiple NICS fails using ansible
+- set_fact:
+    key_contents: "{{ lookup('file', item) }}"
+  with_items:
+    - "{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub"
+    
+# - name: JUMPHOST | creating {{ application }} VM in {{ specified_resourcegroup.name }}
+#   azure_rm_virtualmachine:
+#     resource_group: "{{ specified_resourcegroup.name }}"
+#     location: "{{ region }}"
+#     name: "{{ project }}-{{ application }}"
+#     # storage_account: '{{ vmname }}'
+#    #  storage_container: '{{ vmname }}'
+#    #  storage_blob: '{{ vmname }}.vhd'
+#     network_interface_names:
+#       - "{{ project }}_{{ application }}_external"
+#       - "{{ project }}_{{ application }}_internal"
+#     vm_size: "{{ type }}"
+#     admin_username: "{{ user }}"
+#     ssh_password_enabled: False
+#     ssh_public_keys:
+#       - path: "/home/{{ user }}/.ssh/authorized_keys"
+#         key_data: "{{ key_contents }}"
+# #    image: "{{ image }}"
+#     image:
+#       publisher: OpenLogic
+#       offer: CentOS
+#       sku: '7.4'
+#       version: latest
 
 - name: JUMPHOST Azure | discovering {{ application }}
   azure_rm_publicipaddress_facts:
@@ -186,12 +216,12 @@
     block: |
       Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}
           Hostname {{ found_jumphosts.ansible_facts.azure_publicipaddresses.0.properties.ipAddress }}
-          User centos
+          User {{ user }}
           IdentityFile {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
           StrictHostKeyChecking no
 
       Host {{ private_wildcard.stdout }}
-          User centos
+          User {{ user }}
           IdentitiesOnly yes
           StrictHostKeyChecking no
           ProxyCommand ssh {{ tenant }}_{{ cloud }}_jumphost_{{ domain }} -W %h:%p
@@ -206,24 +236,3 @@
 #   with_items: "{{ ec2.instances }}"
 #   when:
 #     - not ec2|skipped and ec2.changed and ec2.instances|length > 0
-
-# multiple NICS fails using ansible
-# - name: JUMPHOST | creating {{ application }} VM in {{ specified_resourcegroup.name }}
-#   azure_rm_virtualmachine:
-#     resource_group: "{{ specified_resourcegroup.name }}"
-#     name: "{{ project }}-{{ application }}"
-#     # storage_account: '{{ vmname }}'
-#    #  storage_container: '{{ vmname }}'
-#    #  storage_blob: '{{ vmname }}.vhd'
-#     network_interface_names: [  "{{ project }}_{{ application }}_internal", "{{ project }}_{{ application }}_external" ]
-#     vm_size: "{{ image }}"
-#     admin_username: "{{ user }}"
-#     ssh_password_enabled: False
-#     ssh_public_keys:
-#       - path: "/home/{{ user }}/.ssh/authorized_keys"
-#         key_data: "{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub"
-#     image:
-#       offer: CentOS
-#       publisher: OpenLogic
-#       sku: '7.4'
-#       version: latest
