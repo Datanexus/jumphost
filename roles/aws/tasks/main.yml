@@ -93,12 +93,12 @@
   register: sg_ssh
 
 - name: JUMPHOST AWS | checking {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
-  stat: path="./{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
+  stat: path="{{ ansible_env.PWD }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
   register: existing_key
 
 - block: 
   - name: JUMPHOST AWS | generating public key from {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
-    command: "/usr/bin/ssh-keygen -f {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem -y"
+    command: "/usr/bin/ssh-keygen -f {{ ansible_env.PWD }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem -y"
     register: public_key_from_pem
     
   - name: JUMPHOST AWS | using existing {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}
@@ -124,7 +124,7 @@
 
   - name: JUMPHOST AWS | saving {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}
     copy:
-      dest: "./{{ cloud }}-{{ keypair.key.name }}-private-key.pem"
+      dest: "{{ ansible_env.PWD }}/{{ cloud }}-{{ keypair.key.name }}-private-key.pem"
       content: "{{ keypair.key.private_key }}"
       mode: 0400
   when:
@@ -187,14 +187,14 @@
     path: "{{ ansible_env.HOME }}/.ssh/config"
     marker: "# jumphost {mark} ANSIBLE MANAGED BLOCK"
     block: |
-      Host dn_jumphost
+      Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}
           Hostname {{ ec2.instances.0.public_ip }}
-          User centos
-          IdentityFile {{ ansible_env.PWD }}/{{ keypair.key.name }}-private-key.pem
+          User {{ user }}
+          IdentityFile {{ ansible_env.PWD }}/{{ cloud }}-{{ keypair.key.name }}-private-key.pem
           StrictHostKeyChecking no
         
       Host {{ private_wildcard.stdout }}
-          User centos
+          User {{ user }}
           IdentitiesOnly yes
           StrictHostKeyChecking no
           ProxyCommand ssh dn_jumphost -W %h:%p
