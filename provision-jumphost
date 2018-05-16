@@ -18,9 +18,30 @@
     - include_role:
         name: azure
       when: cloud == 'azure'
-         
+   
 #    - { role: osp, when: cloud == 'osp' }
 
+- name: JUMPHOST OVERLAY | building host groups
+  vars_files:
+    - "{{ configuration }}"  
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - include_role:
+        name: aws
+        tasks_from: discover-vm
+      when: cloud == 'aws'
+      
+    - include_role:
+        name: azure
+        tasks_from: discover-vm
+      when: cloud == 'azure'
+    
+    - include_role:
+        name: jumphost
+        tasks_from: modify-sshconfig    
+      
 # this is a separate step because ansible needs to gather facts on a fully configured base system
 - name: JUMPHOST OVERLAY | completing OS configuration
   hosts: "{{ application }}"

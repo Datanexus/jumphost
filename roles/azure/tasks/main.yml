@@ -2,21 +2,7 @@
 #
 # Launch an Azure image
 --- 
-#
-# # wait_for doesn't work with a proxy, so we need to ssh and check output
-# - name: waiting for {{ item }} with {{ keypair.key.name }}-private-key.pem"
-#   local_action: shell /bin/sleep 60 && /usr/bin/ssh -i "./{{ keypair.key.name }}-private-key.pem" "{{ user }}"@"{{ item }}" echo DataNexus
-#   register: output
-#   retries: 4
-#   delay: 15
-#   until: output.stdout.find('DataNexus') != -1
-#   with_items: "{{ groups.jumphost }}"
-#   when:
-#     - not ec2|skipped and ec2.changed and ec2.instances|length > 0
-# (c) 2016 DataNexus Inc.  All Rights Reserved.
-#
 # discover Azure resource groups, virtual networks, and subnets
-
 - name: JUMPHOST AZURE | retrieving resource group by name
   azure_rm_resourcegroup_facts:
     name: "{{ project }}_{{ domain }}"
@@ -86,9 +72,8 @@
         priority: 200
   register: sg_closed
 
-- name: JUMPHOST AZURE | setting key path to {{ key_path }}
-  set_fact: key_path="{{ ansible_env.PWD }}"
-  when: key_path is not defined
+- name: JUMPHOST AZURE | setting key path to {{ key_path | default (playbook_dir) }}
+  set_fact: key_path="{{ key_path | default (playbook_dir) }}"
 
 - name: JUMPHOST AZURE | checking {{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
   stat: path="{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
@@ -109,16 +94,21 @@
   when:
     - not existing_key.stat.exists
 
-- name: JUMPHOST AZURE | creating {{ application }} virtual {{ project }}_{{ application }}_external NIC
+# the math is overkill, but it's useful if we want to get more complicated
+- name: JUMPHOST OVERLAY | setting count to {{ count }}
+  set_fact:
+    count: "{{ count | default(1) | int * 1  }}"
+    
+- name: JUMPHOST AZURE | creating {{ count }} {{ application }} virtual {{ project }}_{{ application }}_external NIC
   azure_rm_networkinterface:
     resource_group: "{{ specified_resourcegroup.name }}"
-    name: "{{ project }}_{{ application }}_external"
+    name: "{{ project }}_{{ application }}_{{ item }}_external"
     virtual_network: "{{ virtualnetwork_by_name.ansible_facts.azure_virtualnetworks.0.name }}"
     subnet_name: '{{ internal_public_subnet_result.name }}'
     security_group_name: "dnsg_{{ project }}_ssh_public_external"
     ip_configurations:
       - name: ipconfig1
-        public_ip_address_name: "{{ project }}_{{ application }}_external_ip"
+        public_ip_address_name: "{{ project }}_{{ application }}_{{ item }}_external_ip"
         primary: yes
     tags:
       Application: "{{ application }}"
@@ -129,11 +119,12 @@
       Domain: "{{ domain }}"
       Cluster: "{{ cluster | default ('none') }}"
       Dataflow: "{{ dataflow | default ('none') }}"
-        
-- name: JUMPHOST AZURE | creating {{ application }} virtual {{ project }}_{{ application }}_internal NIC
+  with_sequence: count={{ count }}
+    
+- name: JUMPHOST AZURE | creating {{ count }} {{ application }} virtual {{ project }}_{{ application }}_internal NIC
   azure_rm_networkinterface:
     resource_group: "{{ specified_resourcegroup.name }}"
-    name: "{{ project }}_{{ application }}_internal"    
+    name: "{{ project }}_{{ application }}_{{ item }}_internal"    
     virtual_network: "{{ virtualnetwork_by_name.ansible_facts.azure_virtualnetworks.0.name }}"
     subnet_name: "{{ internal_private_subnet_result.name }}"
     security_group_name: "dnsg_{{ project }}_closed"
@@ -149,17 +140,18 @@
       Domain: "{{ domain }}"
       Cluster: "{{ cluster | default ('none') }}"
       Dataflow: "{{ dataflow | default ('none') }}"
-
-# this is not necessarily idempotent because we're shelling out
-- name: JUMPHOST AZURE | creating {{ application }} VM in {{ specified_resourcegroup.name }}
-  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }} --location {{ region }} --nics {{ project }}_{{ application }}_external {{ project }}_{{ application }}_internal  --size {{ type | default('Standard_B1s') }} --image {{ image | default('Centos') }} --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
-
-# multiple NICS fails using ansible
-- set_fact:
-    key_contents: "{{ lookup('file', item) }}"
-  with_items:
-    - "{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub"
+  with_sequence: count={{ count }}
     
+# this is not necessarily idempotent because we're shelling out
+- name: JUMPHOST AZURE | creating {{ count }} {{ application }} VM in {{ specified_resourcegroup.name }}
+  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }}-{{ item }} --location {{ region }} --nics {{ project }}_{{ application }}_{{ item }}_external {{ project }}_{{ application }}_{{ item }}_internal  --size {{ type | default('Standard_B1s') }} --image {{ image | default('Centos') }} --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
+  with_sequence: count={{ count }}
+
+# - set_fact:
+#     key_contents: "{{ lookup('file', item) }}"
+#   with_items:
+#     - "{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub"
+#   
 # - name: JUMPHOST | creating {{ application }} VM in {{ specified_resourcegroup.name }}
 #   azure_rm_virtualmachine:
 #     resource_group: "{{ specified_resourcegroup.name }}"
@@ -183,48 +175,6 @@
 #       offer: CentOS
 #       sku: '7.4'
 #       version: latest
-
-- name: JUMPHOST AZURE | discovering {{ application }}
-  azure_rm_publicipaddress_facts:
-    resource_group: "{{ specified_resourcegroup.name }}"
-    name: "{{ project }}_{{ application }}_external_ip"
-  register: found_jumphosts
-
-- name: JUMPHOST AZURE | adding all {{ application }} instances to {{ application }} host group
-  add_host: hostname="{{ item.properties.ipAddress }}" groupname=jumphost ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
-  with_items: "{{ found_jumphosts.ansible_facts.azure_publicipaddresses }}"
-
-# handle execution on either macos or linux
-- set_fact:
-    sed_location: /usr/bin
-  when:  ansible_distribution  == 'MacOSX'
-
-- set_fact:
-    sed_location: /bin
-  when: ansible_distribution  == 'CentOS' or ansible_distribution == 'RedHat' or ansible_distribution == 'Ubuntu'
-  
-- local_action: shell echo "{{ internal_subnet }}" | "{{ sed_location }}"/sed 's/0\/24/*/'
-  register: private_wildcard
-    
-- name: JUMPHOST AZURE | configuring ssh for platform access
-  blockinfile:
-    state: present
-    create: yes
-    insertafter: EOF
-    path: "{{ ansible_env.HOME }}/.ssh/config"
-    marker: "# {{ cloud }} jumphost {mark} ANSIBLE MANAGED BLOCK"
-    block: |
-      Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}
-          Hostname {{ found_jumphosts.ansible_facts.azure_publicipaddresses.0.properties.ipAddress }}
-          User {{ user }}
-          IdentityFile {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
-          StrictHostKeyChecking no
-
-      Host {{ private_wildcard.stdout }}
-          User {{ user }}
-          IdentitiesOnly yes
-          StrictHostKeyChecking no
-          ProxyCommand ssh {{ tenant }}_{{ cloud }}_jumphost_{{ domain }} -W %h:%p
 
 # # wait_for doesn't work with a proxy, so we need to ssh and check output
 # - name: JUMPHOST | waiting for {{ item }} with {{ keypair.key.name }}-private-key.pem"
