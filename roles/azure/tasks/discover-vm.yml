@@ -3,25 +3,15 @@
 # discover Azure inventory
 ---
 - name: JUMPHOST OVERLAY | setting key_path
-  set_fact: key_path="{{ ansible_env.PWD }}"
-  when: key_path is not defined
-
-- name: JUMPHOST OVERLAY | discovering {{ application }}
+  set_fact: key_path="{{ key_path | default(playbook_dir) }}"
+  
+- name: JUMPHOST AZURE | discovering {{ application }}
   azure_rm_publicipaddress_facts:
     resource_group: "{{ specified_resourcegroup.name }}"
-    name: "{{ project }}_{{ application }}_internal"
-    tags:
-      - Application:{{ application }}
-      - Role:{{ role | default('none') }}
-      - Tenant:{{ tenant }}
-      - Project:{{ project }}
-      - Cloud:{{ cloud }}
-      - Domain:{{ domain }}
-      - Cluster:{{ cluster | default('none') }}
-      - Dataflow:{{ dataflow | default('none') }}
-  register: all_jumphosts
-  
+    name: "{{ project }}_{{ application }}_{{ item }}_external_ip"
+  with_sequence: count={{ count }}
+  register: found_jumphosts
+
 - name: JUMPHOST OVERLAY | adding all jumphosts to {{ application }} host group
-  add_host: hostname="{{ item.properties.ipAddress }}" groupname="{{ application }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path }}/{{cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
-  with_items: "{{ all_jumphosts.ansible_facts.azure_publicipaddresses }}"
- 
+  add_host: hostname="{{ item.ansible_facts.azure_publicipaddresses.0.properties.ipAddress }}" groupname="{{ application }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path }}/{{cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
+  with_items: "{{ found_jumphosts.results }}"

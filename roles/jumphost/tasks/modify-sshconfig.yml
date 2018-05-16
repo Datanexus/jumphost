@@ -1,0 +1,37 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+#
+# modify local ssh/config for jumphosts
+---
+# handle execution on either macos or linux
+- set_fact:
+    sed_location: /usr/bin
+  when:  ansible_distribution  == 'MacOSX'
+
+- set_fact:
+    sed_location: /bin
+  when: ansible_distribution  == 'CentOS' or ansible_distribution == 'RedHat' or ansible_distribution == 'Ubuntu'
+  
+- local_action: shell echo "{{ internal_subnet }}" | "{{ sed_location }}"/sed 's/0\/24/*/'
+  register: private_wildcard
+
+# all jumphosts are the same, so we arbitrarily just take the first in the list to use  
+- name: JUMPHOST AZURE | configuring ssh for platform access
+  blockinfile:
+    state: present
+    create: yes
+    insertafter: EOF
+    path: "{{ ansible_env.HOME }}/.ssh/config"
+    marker: "# {{ cloud }} jumphost {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}
+          Hostname {{ groups[application].0 }}
+          User {{ user }}
+          IdentityFile {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
+          StrictHostKeyChecking no
+
+      Host {{ private_wildcard.stdout }}
+          User {{ user }}
+          IdentitiesOnly yes
+          StrictHostKeyChecking no
+          ProxyCommand ssh {{ tenant }}_{{ cloud }}_jumphost_{{ domain }} -W %h:%p
+  
