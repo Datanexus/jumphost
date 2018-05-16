@@ -3,17 +3,17 @@
 # example AWS instance
 ---
 cloud: aws  
-tenant: datanexus
-project: demo
-domain: development
+tenant: AWS_PROFILE
+project: PROJECT
+domain: DOMAIN
 application: jumphost
-region: us-east-2
-zone: a
-count: 1
-user: centos
-image: ami-e1496384
-type: t2.micro
-root_volume: 11
-cidr_block: 10.10.0.0/16
-internal_subnet: 10.10.1.0/24
-external_subnet: 10.10.2.0/24
+region: AWS_REGION
+count: COUNT
+user: USER
+image: AMI
+type: TYPE
+root_volume: SIZE
+cidr_block: CIDR_BLOCK
+internal_subnet: SUBNET
+external_subnet: SUBNET
+http_proxy: PROXY
