@@ -117,21 +117,7 @@
           state: absent
         with_sequence: count={{ count }}
         
-      - name: JUMPHOST CLEANUP | removing {{ project }}_{{ application }}_{{ item }}_internal
-        azure_rm_securitygroup:
-          resource_group: "{{ specified_resourcegroup.name }}"
-          name: "{{ project }}_{{ application }}_{{ item }}_internal"
-          state: absent
-        with_sequence: count={{ count }}
-      
-      - name: JUMPHOST CLEANUP | removing {{ project }}_{{ application }}_{{ item }}_external
-        azure_rm_securitygroup:
-          resource_group: "{{ specified_resourcegroup.name }}"
-          name: "{{ project }}_{{ application }}_{{ item }}_external"
-          state: absent
-        with_sequence: count={{ count }}
-        
-      - name: JUMPHOST OVERLAY | deleting all security groups
+      - name: JUMPHOST OVERLAY | deleting security groups
         azure_rm_securitygroup:
           resource_group: "{{ specified_resourcegroup.name }}"
           name: "{{ item }}"

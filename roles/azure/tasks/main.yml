@@ -48,7 +48,7 @@
         protocol: Tcp
         source_address_prefix: '*'
         source_port_range: '*'
-        destination_address_range: "{{ internal_public_subnet_result.properties.addressPrefix }}"
+        destination_address_prefix: "{{ internal_public_subnet_result.properties.addressPrefix }}"
         destination_port_range: 22
         access: Allow
         direction: Inbound
@@ -65,7 +65,7 @@
         protocol: '*'
         source_address_prefix: '*'
         source_port_range: '*'
-        destination_address_range: '*'
+        destination_address_prefix: '*'
         destination_port_range: '*'
         access: Deny
         direction: Inbound
@@ -141,40 +141,40 @@
       Cluster: "{{ cluster | default ('none') }}"
       Dataflow: "{{ dataflow | default ('none') }}"
   with_sequence: count={{ count }}
-    
-# this is not necessarily idempotent because we're shelling out
-- name: JUMPHOST AZURE | creating {{ count }} {{ application }} VM in {{ specified_resourcegroup.name }}
-  command: "az vm create --resource-group {{ specified_resourcegroup.name }} --name {{ project }}-{{ application }}-{{ item }} --location {{ region }} --nics {{ project }}_{{ application }}_{{ item }}_external {{ project }}_{{ application }}_{{ item }}_internal  --size {{ type | default('Standard_B1s') }} --image {{ image | default('Centos') }} --admin-username {{ user }} --authentication-type ssh --ssh-key-value {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub --tags Name={{ project }}_{{ application }} Tenant={{ tenant }} Project={{ project }} Cloud={{ cloud }} Domain={{ domain }} Application={{ application }} Cluster={{ cluster | default ('none') }} Role={{ role | default ('none') }} Dataflow={{ dataflow | default ('none') }}"
-  with_sequence: count={{ count }}
 
-# - set_fact:
-#     key_contents: "{{ lookup('file', item) }}"
-#   with_items:
-#     - "{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub"
-#   
-# - name: JUMPHOST | creating {{ application }} VM in {{ specified_resourcegroup.name }}
-#   azure_rm_virtualmachine:
-#     resource_group: "{{ specified_resourcegroup.name }}"
-#     location: "{{ region }}"
-#     name: "{{ project }}-{{ application }}"
-#     # storage_account: '{{ vmname }}'
-#    #  storage_container: '{{ vmname }}'
-#    #  storage_blob: '{{ vmname }}.vhd'
-#     network_interface_names:
-#       - "{{ project }}_{{ application }}_external"
-#       - "{{ project }}_{{ application }}_internal"
-#     vm_size: "{{ type }}"
-#     admin_username: "{{ user }}"
-#     ssh_password_enabled: False
-#     ssh_public_keys:
-#       - path: "/home/{{ user }}/.ssh/authorized_keys"
-#         key_data: "{{ key_contents }}"
-# #    image: "{{ image }}"
-#     image:
-#       publisher: OpenLogic
-#       offer: CentOS
-#       sku: '7.4'
-#       version: latest
+- set_fact:
+    key_contents: "{{ lookup('file', item) }}"
+  with_items:
+    - "{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub"
+
+- name: JUMPHOST | creating {{ application }} VM in {{ specified_resourcegroup.name }}
+  azure_rm_virtualmachine:
+    resource_group: "{{ specified_resourcegroup.name }}"
+    location: "{{ region }}"
+    name: "{{ project }}-{{ application }}-{{ item }}"
+    # storage_account: '{{ vmname }}'
+   #  storage_container: '{{ vmname }}'
+   #  storage_blob: '{{ vmname }}.vhd'
+    network_interface_names:
+      - "{{ project }}_{{ application }}_{{ item }}_external"
+      - "{{ project }}_{{ application }}_{{ item }}_internal"
+    vm_size: "{{ type }}"
+    admin_username: "{{ user }}"
+    ssh_password_enabled: False
+    ssh_public_keys:
+      - path: "/home/{{ user }}/.ssh/authorized_keys"
+        key_data: "{{ key_contents }}"
+    image: "{{ image }}"
+    tags:
+      Application: "{{ application }}"  
+      Role: "{{ role | default ('none') }}"
+      Tenant: "{{ tenant }}"
+      Project: "{{ project }}"
+      Cloud: "{{ cloud }}"
+      Domain: "{{ domain }}"
+      Cluster: "{{ cluster | default ('none') }}"
+      Dataflow: "{{ dataflow | default ('none') }}"
+  with_sequence: count={{ count }}
 
 # # wait_for doesn't work with a proxy, so we need to ssh and check output
 # - name: JUMPHOST | waiting for {{ item }} with {{ keypair.key.name }}-private-key.pem"
