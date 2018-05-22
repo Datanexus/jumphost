@@ -147,18 +147,16 @@
   with_items:
     - "{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub"
 
-- name: JUMPHOST | creating {{ application }} VM in {{ specified_resourcegroup.name }}
+- name: JUMPHOST | creating {{ count }} {{ application }} VM in {{ specified_resourcegroup.name }}
   azure_rm_virtualmachine:
     resource_group: "{{ specified_resourcegroup.name }}"
     location: "{{ region }}"
     name: "{{ project }}-{{ application }}-{{ item }}"
-    # storage_account: '{{ vmname }}'
-   #  storage_container: '{{ vmname }}'
-   #  storage_blob: '{{ vmname }}.vhd'
     network_interface_names:
       - "{{ project }}_{{ application }}_{{ item }}_external"
       - "{{ project }}_{{ application }}_{{ item }}_internal"
     vm_size: "{{ type }}"
+    managed_disk_type: "{{ root_disk_type | default('Standard_LRS') }}"
     admin_username: "{{ user }}"
     ssh_password_enabled: False
     ssh_public_keys:
