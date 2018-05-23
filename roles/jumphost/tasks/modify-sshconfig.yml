@@ -21,10 +21,10 @@
     create: yes
     insertafter: EOF
     path: "{{ ansible_env.HOME }}/.ssh/config"
-    marker: "# {{ cloud }} jumphost {mark} ANSIBLE MANAGED BLOCK"
+    marker: "# {{ tenant }} {{ cloud }} {{ item }} {mark} ANSIBLE MANAGED BLOCK"
     block: |
-      Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}
-          Hostname {{ groups[application].0 }}
+      Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}_{{ item }}
+          Hostname {{ item }}
           User {{ user }}
           IdentityFile {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
           StrictHostKeyChecking no
@@ -33,5 +33,5 @@
           User {{ user }}
           IdentitiesOnly yes
           StrictHostKeyChecking no
-          ProxyCommand ssh {{ tenant }}_{{ cloud }}_jumphost_{{ domain }} -W %h:%p
-  
+          ProxyCommand ssh {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}_{{ item }} -W %h:%p
+  with_items: "{{ groups[application] }}"
