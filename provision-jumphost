@@ -4,13 +4,17 @@
 # main routine for provisioning jumphosts
 ---
 - name: JUMPHOST | launching VM
+  tags:
+    - vm
   vars_files:
-    - "{{ configuration }}"
     - vars/jumphost.yml
   hosts: localhost
   connection: local
   gather_facts: true
   tasks:
+    - include_vars: "{{ configuration }}"
+      when: configuration is defined
+      
     - include_role:
         name: aws
       when: cloud == 'aws'
@@ -22,12 +26,16 @@
 #    - { role: osp, when: cloud == 'osp' }
 
 - name: JUMPHOST OVERLAY | building host groups
-  vars_files:
-    - "{{ configuration }}"  
+  tags:
+    - vm
+    - jumphost
   hosts: localhost
   connection: local
   gather_facts: no
   tasks:
+    - include_vars: "{{ configuration }}"
+      when: configuration is defined
+      
     - include_role:
         name: aws
         tasks_from: discover-vm
@@ -44,12 +52,16 @@
       
 # this is a separate step because ansible needs to gather facts on a fully configured base system
 - name: JUMPHOST OVERLAY | completing OS configuration
+  tags:
+    - jumphost
   hosts: "{{ application }}"
   vars_files:
-    - "{{ configuration }}"
     - vars/jumphost.yml
   gather_facts: yes
   tasks:
+    - include_vars: "{{ configuration }}"
+      when: configuration is defined
+      
     - include_role:
         name: preflight
     - include_role:

@@ -4,7 +4,9 @@
 ---
 - name: JUMPHOST OVERLAY | setting key_path
   set_fact: key_path="{{ key_path | default(playbook_dir) }}"
-  
+
+- include_tasks: discover-resourcegroup.yml
+
 - name: JUMPHOST AZURE | discovering {{ application }}
   azure_rm_publicipaddress_facts:
     resource_group: "{{ specified_resourcegroup.name }}"
