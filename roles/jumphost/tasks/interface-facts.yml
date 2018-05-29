@@ -2,7 +2,7 @@
 #
 # automatically set facts based on a multi-homed system
 ---
-- name: setting eth1 to postgresql and metrics
+- name: setting eth1 to data and metrics
   set_fact:
     jumphost_interface: "{{ hostvars[inventory_hostname].ansible_eth1.device }}"
     jumphost_interface_ipv4: "{{ hostvars[inventory_hostname].ansible_eth1.ipv4.address }}"

@@ -13,7 +13,7 @@
 
 # we need to handle being deploy-by-flow and deploy-by-file
 - set_fact:
-    internal_subnet: "{{ dn_subnets.private }}"
+    internal_subnet: "{{ dn_subnets.public }}"
   when : internal_subnet is not defined
   
 - local_action: shell echo "{{ internal_subnet }}" | "{{ sed_location }}"/sed 's/0\/24/*/'
