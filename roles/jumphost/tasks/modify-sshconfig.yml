@@ -10,6 +10,11 @@
 - set_fact:
     sed_location: /bin
   when: ansible_distribution  == 'CentOS' or ansible_distribution == 'RedHat' or ansible_distribution == 'Ubuntu'
+
+# we need to handle being deploy-by-flow and deploy-by-file
+- set_fact:
+    internal_subnet: "{{ dn_subnets.private }}"
+  when : internal_subnet is not defined
   
 - local_action: shell echo "{{ internal_subnet }}" | "{{ sed_location }}"/sed 's/0\/24/*/'
   register: private_wildcard
@@ -35,3 +40,4 @@
           StrictHostKeyChecking no
           ProxyCommand ssh {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}_{{ item }} -W %h:%p
   with_items: "{{ groups[application] }}"
+  

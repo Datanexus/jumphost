@@ -18,5 +18,10 @@ else
 fi
 
 #./initialize -e "configuration=$configuration"
-printf "running with %s configuration...\\n" "$configuration"
-./provision-jumphost -e "configuration=$configuration"
+# likely called by the orchestrator to just pass through everything
+if [ $# -eq 4 ] && [ "$1" = "-e" ]; then
+  ./provision-jumphost "$1" "$2" "$3" "$4"
+# call with just the configuratiojn file in standalone mode 
+elif [ $# -eq 1 ] && [ -f "$1" ] && [ -s "$1" ]; then
+  ./provision-jumphost --tags "vm,$application" -e "configuration=$configuration"
+fi
