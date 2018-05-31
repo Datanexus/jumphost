@@ -10,10 +10,11 @@
 - name: JUMPHOST AZURE | discovering {{ application }}
   azure_rm_publicipaddress_facts:
     resource_group: "{{ specified_resourcegroup.name }}"
-    name: "{{ project }}_{{ application }}_{{ item }}_external_ip"
+    name: "{{ project }}_{{ application }}_{{ ec2_tag_Role }}_{{ cluster }}_{{ dataflow }}_{{ item }}_external_ip"
   with_sequence: count={{ count }}
   register: found_jumphosts
 
 - name: JUMPHOST OVERLAY | adding all jumphosts to {{ application }} host group
   add_host: hostname="{{ item.ansible_facts.azure_publicipaddresses.0.properties.ipAddress }}" groupname="{{ application }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path }}/{{cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
+  when: item.ansible_facts.azure_publicipaddresses | length > 0
   with_items: "{{ found_jumphosts.results }}"
