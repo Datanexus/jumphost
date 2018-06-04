@@ -84,7 +84,7 @@
     security_group_name: "dnsg_{{ project }}_ssh_public_external"
     ip_configurations:
       - name: ipconfig1
-        public_ip_address_name: "{{ project }}_{{ application }}_{{ item }}_external_ip"
+        public_ip_address_name: "{{ project }}_{{ application }}_{{ role | default('none') }}_{{ cluster | default('none') }}_{{ dataflow | default('none') }}_{{ item }}_external_ip"
         primary: yes
     tags:
       Application: "{{ application }}"

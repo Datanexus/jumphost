@@ -10,7 +10,7 @@
 - name: JUMPHOST AZURE | discovering {{ application }}
   azure_rm_publicipaddress_facts:
     resource_group: "{{ specified_resourcegroup.name }}"
-    name: "{{ project }}_{{ application }}_{{ ec2_tag_Role }}_{{ cluster }}_{{ dataflow }}_{{ item }}_external_ip"
+    name: "{{ project }}_{{ application }}_{{ ec2_tag_Role | default('none') }}_{{ cluster | default('none') }}_{{ dataflow | default('none') }}_{{ item }}_external_ip"
   with_sequence: count={{ count }}
   register: found_jumphosts
 

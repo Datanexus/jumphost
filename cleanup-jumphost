@@ -113,7 +113,7 @@
       - name: JUMPHOST CLEANUP | deleting public ips
         azure_rm_publicipaddress:
           resource_group: "{{ specified_resourcegroup.name }}"
-          name: "{{ project }}_{{ application }}_{{ item }}_external_ip"
+          name: "{{ project }}_{{ application }}_{{ role | default('none') }}_{{ cluster | default('none') }}_{{ dataflow | default('none') }}_{{ item }}_external_ip"
           state: absent
         with_sequence: count={{ count }}
         
