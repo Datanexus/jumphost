@@ -5,3 +5,22 @@
 # facts configuration.
 - include_tasks: interface-facts.yml
 
+- name: JUMPHOST OVERLAY | configuring public key authentication only
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^#PubkeyAuthentication yes"
+    backrefs: yes
+    line: "PubkeyAuthentication yes"
+  become: true
+
+- name: JUMPHOST OVERLAY | limiting login attempts
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^#MaxAuthTries 6"
+    backrefs: yes
+    line: "MaxAuthTries 3"
+  become: true
+
+- name: JUMPHOST PREFLIGHT OVERLAY | restarting  sshd
+  systemd: name=sshd state=restarted daemon_reload=yes
+  become: true
