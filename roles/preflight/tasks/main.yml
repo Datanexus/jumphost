@@ -44,10 +44,8 @@
     line: "ListenAddress {{ hostvars[inventory_hostname].ansible_default_ipv4.address }}"
   become: true
 
-- name: JUMPHOST PREFLIGHT OVERLAY | restart sshd
-  service:
-     name: sshd
-     state: restarted
+- name: JUMPHOST PREFLIGHT OVERLAY | restarting  sshd
+  systemd: name=sshd state=restarted daemon_reload=yes
   become: true
 
 - name: JUMPHOST PREFLIGHT OVERLAY | generating UUID
@@ -98,13 +96,14 @@
     - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
 
 # community CentOS AMI ships with postfix enabled so we need to disable it
-# note that this will fail idempotency if the package doesn't exist because it was removed
-- name: JUMPHOST PREFLIGHT OVERLAY | stopping postfix
+# adding the failed_when makes it idempotent
+- name: POSTGRESQL PREFLIGHT OVERLAY | stopping postfix
   service:
     name: postfix
     state: stopped
   become: true
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'  
+  failed_when: no
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat' 
   
 # annnnd remove it
 - name: JUMPHOST PREFLIGHT OVERLAY | removing postfix

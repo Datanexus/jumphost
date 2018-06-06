@@ -64,6 +64,10 @@
       
     - include_role:
         name: preflight
+    
+    - include_role:
+        name: jumphost
+        
     - include_role:
         name: http-proxy
       when: http_proxy is defined
