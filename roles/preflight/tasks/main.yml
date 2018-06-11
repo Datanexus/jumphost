@@ -9,8 +9,8 @@
     - internal_subnet is defined
 
 - block:
+  
   - name: JUMPHOST PREFLIGHT OVERLAY | creating ifcfg-{{ private_internal_interface }}
-    become: true
     blockinfile:
       path: "/etc/sysconfig/network-scripts/ifcfg-{{ private_internal_interface }}"
       create: yes
@@ -27,34 +27,53 @@
       - private_internal_interface is defined
   
   - name: JUMPHOST PREFLIGHT OVERLAY | restart networking
-    become: true
     systemd: "name=network state=restarted"
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+  become: yes
   when: cloud == 'aws' or cloud == 'osp'
    
 - name: JUMPHOST PREFLIGHT OVERLAY | ensure sshd_config is writable
   command: /bin/chattr -i /etc/ssh/sshd_config
-  become: true
-  
-- name: JUMPHOST PREFLIGHT OVERLAY | ensuring sshd listens on provisioning network
-  lineinfile:
-    dest: /etc/ssh/sshd_config
-    regexp: "^#ListenAddress 0.0.0.0"
-    backrefs: yes
-    line: "ListenAddress {{ hostvars[inventory_hostname].ansible_default_ipv4.address }}"
-  become: true
+  become: yes
 
-- name: JUMPHOST PREFLIGHT OVERLAY | restarting  sshd
-  systemd: name=sshd state=restarted daemon_reload=yes
-  become: true
+- block:
+  
+  - name: JUMPHOST PREFLIGHT OVERLAY | ensuring sshd listens on provisioning network
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: "^#ListenAddress 0.0.0.0"
+      backrefs: yes
+      line: "ListenAddress {{ hostvars[inventory_hostname].ansible_default_ipv4.address }}"
+
+  - name: JUMPHOST PREFLIGHT OVERLAY  | configuring public key authentication only
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: "^#PubkeyAuthentication yes"
+      backrefs: yes
+      line: "PubkeyAuthentication yes"
+
+  - name: JUMPHOST PREFLIGHT OVERLAY  | limiting login attempts
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: "^#MaxAuthTries 6"
+      backrefs: yes
+      line: "MaxAuthTries 3"
+  
+  - name: JUMPHOST PREFLIGHT OVERLAY | restarting  sshd
+    systemd: name=sshd state=restarted daemon_reload=yes
+    
+  become: yes
+  when:
+    - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
 
 - name: JUMPHOST PREFLIGHT OVERLAY | generating UUID
   shell: /usr/bin/uuidgen | /usr/bin/tr -d \-
   register: uuid
-  become: true
 
 # the lineinfile plays aren't intended to be idempotent
 - block:
+  
   - name: JUMPHOST PREFLIGHT OVERLAY | setting hostname actively so rebooting is unnecessary
     command: /usr/bin/hostnamectl set-hostname {{ application }}-{{ uuid.stdout }}
 
@@ -91,7 +110,8 @@
       line: 'preserve_hostname: true'
     when:
       - cloud == 'aws'
-  become: true
+      
+  become: yes
   when:
     - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
 
@@ -101,7 +121,7 @@
   service:
     name: postfix
     state: stopped
-  become: true
+  become: yes
   failed_when: no
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat' 
   
@@ -110,7 +130,7 @@
   package:
     name: postfix
     state: absent
-  become: true
+  become: yes
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
     
 # community CentOS image ships with rpcbind enabled; we don't use NFS by default so disable it
@@ -119,7 +139,7 @@
     name: "{{ item }}"
     state: stopped
     enabled: no
-  become: true
+  become: yes
   with_items:
     - rpcbind
     - rpcbind.socket

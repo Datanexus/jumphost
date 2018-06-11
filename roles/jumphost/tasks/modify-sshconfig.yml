@@ -20,7 +20,7 @@
   register: private_wildcard
 
 # all jumphosts are the same, so we arbitrarily just take the first in the list to use  
-- name: JUMPHOST AZURE | configuring ssh for platform access
+- name: JUMPHOST OVERLAY | configuring ssh for platform access
   blockinfile:
     state: present
     create: yes
@@ -31,7 +31,7 @@
       Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}_{{ item }}
           Hostname {{ item }}
           User {{ user }}
-          IdentityFile {{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
+          IdentityFile {{ key_path | default (playbook_dir) }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem
           StrictHostKeyChecking no
 
       Host {{ private_wildcard.stdout }}
