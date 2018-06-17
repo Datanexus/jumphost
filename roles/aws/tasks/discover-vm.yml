@@ -1,0 +1,33 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+#
+# discover AWS inventory
+---
+- name: JUMPHOST AWS | discovering {{ application }}
+  ec2_instance_facts:
+    region: "{{ region }}"
+    filters:
+      instance-state-name: running
+      "tag:Tenant": "{{ tenant }}"
+      "tag:Project": "{{ project }}"
+      "tag:Domain": "{{ domain }}"
+      "tag:Application": "{{ application }}"
+      "tag:Cluster": "{{ cluster | default ('none') }}"
+      "tag:Dataflow": "{{ dataflow | default ('none') }}"
+  register: jumphost_instances
+  when: cloud == 'aws'
+  
+- name: JUMPHOST AWS | building {{ application }} host group
+  add_host: hostname="{{ item }}" groupname="{{ application }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path | default("{{ playbook_dir }}") }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
+  with_items: "{{ jumphost_instances.instances | map (attribute='public_ip_address') | list }}"
+  when:
+    - cloud == 'aws'
+    - jumphost_instances is defined
+    - jumphost_instances.instances | length > 0
+
+- name: JUMPHOST AWS | building {{ application }} host group
+  add_host: hostname="{{ item }}" groupname="{{ application }}_private" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path | default("{{ playbook_dir }}") }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
+  with_items: "{{ jumphost_instances.instances | map (attribute='private_ip_address') | list }}"
+  when:
+    - cloud == 'aws'
+    - jumphost_instances is defined
+    - jumphost_instances.instances | length > 0
