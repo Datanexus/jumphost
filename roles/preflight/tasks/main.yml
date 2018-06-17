@@ -53,7 +53,7 @@
       backrefs: yes
       line: "PubkeyAuthentication yes"
 
-  - name: JUMPHOST PREFLIGHT OVERLAY  | limiting login attempts
+  - name: JUMPHOST PREFLIGHT OVERLAY | limiting login attempts
     lineinfile:
       dest: /etc/ssh/sshd_config
       regexp: "^#MaxAuthTries 6"
@@ -117,7 +117,7 @@
 
 # community CentOS AMI ships with postfix enabled so we need to disable it
 # adding the failed_when makes it idempotent
-- name: POSTGRESQL PREFLIGHT OVERLAY | stopping postfix
+- name: JUMPHOST PREFLIGHT OVERLAY | stopping postfix
   service:
     name: postfix
     state: stopped
