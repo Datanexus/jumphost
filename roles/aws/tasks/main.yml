@@ -111,7 +111,7 @@
     region: "{{ region }}"
     assign_public_ip: yes
     wait: true
-    exact_count: "{{ count }}"
+    exact_count: "{{ instances }}"
     count_tag:
       Name: "{{ project }}_{{ application }}"
       Tenant: "{{ tenant }}"

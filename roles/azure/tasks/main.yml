@@ -71,11 +71,11 @@
     - not existing_key.stat.exists
 
 # the math is overkill, but it's useful if we want to get more complicated
-- name: JUMPHOST OVERLAY | setting count to {{ count }}
+- name: JUMPHOST OVERLAY | setting count to {{ instances }}
   set_fact:
     count: "{{ count | default(1) | int * 1  }}"
     
-- name: JUMPHOST AZURE | creating {{ count }} {{ application }} virtual {{ project }}_{{ application }}_external NIC
+- name: JUMPHOST AZURE | creating {{ instances }} {{ application }} virtual {{ project }}_{{ application }}_external NIC
   azure_rm_networkinterface:
     resource_group: "{{ specified_resourcegroup.name }}"
     name: "{{ project }}_{{ application }}_{{ item }}_external"
@@ -95,9 +95,9 @@
       Domain: "{{ domain }}"
       Cluster: "{{ cluster | default ('none') }}"
       Dataflow: "{{ dataflow | default ('none') }}"
-  with_sequence: count={{ count }}
+  with_sequence: count={{ instances }}
     
-- name: JUMPHOST AZURE | creating {{ count }} {{ application }} virtual {{ project }}_{{ application }}_internal NIC
+- name: JUMPHOST AZURE | creating {{ instances }} {{ application }} virtual {{ project }}_{{ application }}_internal NIC
   azure_rm_networkinterface:
     resource_group: "{{ specified_resourcegroup.name }}"
     name: "{{ project }}_{{ application }}_{{ item }}_internal"    
@@ -116,14 +116,14 @@
       Domain: "{{ domain }}"
       Cluster: "{{ cluster | default ('none') }}"
       Dataflow: "{{ dataflow | default ('none') }}"
-  with_sequence: count={{ count }}
+  with_sequence: count={{ instances }}
 
 - set_fact:
     key_contents: "{{ lookup('file', item) }}"
   with_items:
     - "{{ key_path }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem.pub"
 
-- name: JUMPHOST | creating {{ count }} {{ application }} VM in {{ specified_resourcegroup.name }}
+- name: JUMPHOST | creating {{ instances }} {{ application }} VM in {{ specified_resourcegroup.name }}
   azure_rm_virtualmachine:
     resource_group: "{{ specified_resourcegroup.name }}"
     location: "{{ region }}"
@@ -148,7 +148,7 @@
       Domain: "{{ domain }}"
       Cluster: "{{ cluster | default ('none') }}"
       Dataflow: "{{ dataflow | default ('none') }}"
-  with_sequence: count={{ count }}
+  with_sequence: count={{ instances }}
 
 # # wait_for doesn't work with a proxy, so we need to ssh and check output
 # - name: JUMPHOST | waiting for {{ item }} with {{ keypair.key.name }}-private-key.pem"
