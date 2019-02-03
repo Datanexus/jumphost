@@ -26,7 +26,7 @@
     create: yes
     insertafter: EOF
     path: "{{ ansible_env.HOME }}/.ssh/config"
-    marker: "# {{ tenant }} {{ cloud }} {{ item }} {mark} ANSIBLE MANAGED BLOCK"
+    marker: "# {{ tenant }} {{ cloud }} {{ domain }} {mark} ANSIBLE MANAGED BLOCK"
     block: |
       Host {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}_{{ item }}
           Hostname {{ item }}
