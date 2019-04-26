@@ -26,15 +26,25 @@
       - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
       - private_internal_interface is defined
   
-  - name: JUMPHOST PREFLIGHT OVERLAY | restart networking
-    systemd: "name=network state=restarted"
+  - block:
+    
+    - name: JUMPHOST PREFLIGHT OVERLAY | restart networking with systemd
+      systemd: name=network state=restarted
+      when:
+        - ansible_distribution_version is version_compare('7', '>=')
+  
+    - name: JUMPHOST PREFLIGHT OVERLAY | restart networking with sysvinit
+      sysvinit: name=network state=restarted
+      when:
+        - ansible_distribution_version is version_compare('7', '<')
+    
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
-
+  
   become: yes
   when: cloud == 'aws' or cloud == 'osp'
    
 - name: JUMPHOST PREFLIGHT OVERLAY | ensure sshd_config is writable
-  command: /bin/chattr -i /etc/ssh/sshd_config
+  command: chattr -i /etc/ssh/sshd_config
   become: yes
 
 - block:
@@ -46,7 +56,7 @@
       backrefs: yes
       line: "ListenAddress {{ hostvars[inventory_hostname].ansible_default_ipv4.address }}"
 
-  - name: JUMPHOST PREFLIGHT OVERLAY  | configuring public key authentication only
+  - name: JUMPHOST PREFLIGHT OVERLAY | configuring public key authentication only
     lineinfile:
       dest: /etc/ssh/sshd_config
       regexp: "^#PubkeyAuthentication yes"
@@ -60,9 +70,16 @@
       backrefs: yes
       line: "MaxAuthTries 3"
   
-  - name: JUMPHOST PREFLIGHT OVERLAY | restarting  sshd
+  - name: JUMPHOST PREFLIGHT OVERLAY | restarting sshd with systemd
     systemd: name=sshd state=restarted daemon_reload=yes
-    
+    when:
+      - ansible_distribution_version is version_compare('7', '>=')
+  
+  - name: JUMPHOST PREFLIGHT OVERLAY | restarting sshd with sysvinit
+    sysvinit: name=sshd state=restarted
+    when:
+      - ansible_distribution_version is version_compare('7', '<')
+      
   become: yes
   when:
     - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
@@ -74,18 +91,31 @@
 # the lineinfile plays aren't intended to be idempotent
 - block:
   
-  - name: JUMPHOST PREFLIGHT OVERLAY | setting hostname actively so rebooting is unnecessary
-    command: /usr/bin/hostnamectl set-hostname {{ application }}-{{ uuid.stdout }}
-
-  - name: JUMPHOST PREFLIGHT OVERLAY | setting pretty hostname actively so rebooting is unnecessary
-    command: /usr/bin/hostnamectl --pretty set-hostname "{{ tenant }} {{ application }}"  
-
+  - name: CORE POSTFLIGHT | checking for /usr/bin/hostnamectl
+    stat: path=/usr/bin/hostnamectl
+    register: existing_file
+  
+  - block:
+    
+    - name: JUMPHOST PREFLIGHT OVERLAY | setting hostname actively so rebooting is unnecessary
+      command: /usr/bin/hostnamectl set-hostname {{ application }}-{{ uuid.stdout }}
+      
+    - name: JUMPHOST PREFLIGHT OVERLAY | setting hostname actively so rebooting is unnecessary
+      command: /usr/bin/hostnamectl --pretty set-hostname "{{ tenant }} {{ application }}"
+      
+    when: existing_file.stat.exists
+  
+  - name: CORE POSTFLIGHT | checking for /etc/hostname
+    stat: path=/etc/hostname
+    register: existing_file
+      
   - name: JUMPHOST PREFLIGHT OVERLAY | setting hostname in /etc/hostname
     replace:
       path: /etc/hostname
       regexp: "{{ hostvars[inventory_hostname].ansible_hostname }}.ec2.internal"
       replace: "{{ application }}-{{ uuid.stdout }}.localdomain"
-
+    when: existing_file.stat.exists
+    
   - name: JUMPHOST PREFLIGHT OVERLAY | setting {{ application }}-{{ uuid.stdout }}.localdomain in /etc/sysconfig/network
     lineinfile:
       dest: /etc/sysconfig/network
