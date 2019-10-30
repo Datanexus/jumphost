@@ -1,5 +1,6 @@
 #!/usr/bin/env ansible-playbook
 # (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
 #
 # main routine for provisioning jumphosts
 ---
@@ -10,7 +11,7 @@
     - vars/jumphost.yml
   hosts: localhost
   connection: local
-  gather_facts: true
+  gather_facts: yes
   tasks:
     - include_vars: "{{ configuration }}"
       when: configuration is defined
@@ -31,7 +32,7 @@
     - jumphost
   hosts: localhost
   connection: local
-  gather_facts: no
+  gather_facts: yes
   tasks:
     - include_vars: "{{ configuration }}"
       when: configuration is defined
