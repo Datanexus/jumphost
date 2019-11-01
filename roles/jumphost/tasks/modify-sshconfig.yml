@@ -1,22 +1,14 @@
 # (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
 #
 # modify local ssh/config for jumphosts
 ---
-# handle execution on either macos or linux
-- set_fact:
-    sed_location: /usr/bin
-  when:  ansible_distribution  == 'MacOSX'
-
-- set_fact:
-    sed_location: /bin
-  when: ansible_distribution  == 'CentOS' or ansible_distribution == 'RedHat' or ansible_distribution == 'Ubuntu'
-
 # we need to handle being deploy-by-flow and deploy-by-file
 - set_fact:
     internal_subnet: "{{ dn_subnets.public }}"
-  when : internal_subnet is not defined
+  when: internal_subnet is not defined
   
-- local_action: shell echo "{{ internal_subnet }}" | "{{ sed_location }}"/sed 's/0\/24/*/'
+- local_action: shell echo "{{ internal_subnet }}" | sed 's/0\/24/*/'
   register: private_wildcard
 
 # all jumphosts are the same, so we arbitrarily just take the first in the list to use  
@@ -40,4 +32,3 @@
           StrictHostKeyChecking no
           ProxyCommand ssh {{ tenant }}_{{ cloud }}_jumphost_{{ domain }}_{{ item }} -W %h:%p
   with_items: "{{ groups[application] }}"
-  
