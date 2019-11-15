@@ -7,7 +7,7 @@
 - set_fact:
     internal_subnet: "{{ dn_subnets.public }}"
   when: internal_subnet is not defined
-  
+
 - local_action: shell echo "{{ internal_subnet }}" | sed 's/0\/24/*/'
   register: private_wildcard
 
