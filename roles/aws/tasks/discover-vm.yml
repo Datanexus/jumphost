@@ -2,7 +2,7 @@
 #
 # discover AWS inventory
 ---
-- name: JUMPHOST AWS | discovering {{ application }}
+- name: JUMPHOST (AWS) | discovering {{ application }}
   ec2_instance_facts:
     region: "{{ region }}"
     filters:
@@ -15,10 +15,10 @@
       "tag:Dataflow": "{{ dataflow | default ('none') }}"
   register: jumphost_instances
   when: cloud == 'aws'
-  
-- name: JUMPHOST AWS | building {{ application }} host group
-  add_host: hostname="{{ item }}" groupname="{{ application }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path | default("{{ playbook_dir }}") }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
-  with_items: "{{ jumphost_instances.instances | map (attribute='public_ip_address') | list }}"
+
+- name: JUMPHOST (AWS) | building {{ application }} host group
+  add_host: hostname="{{ item.public_ip_address }}" groupname="{{ application }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path | default("{{ playbook_dir }}") }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
+  with_items: "{{ jumphost_instances.instances }}"
   when:
     - cloud == 'aws'
     - jumphost_instances is defined
@@ -26,9 +26,9 @@
     - item.public_ip_address is defined
 
 # this handles the case where the jumphost has no public ip address and the private is routable, eg VPN
-- name: JUMPHOST AWS | building {{ application }} host group
-  add_host: hostname="{{ item }}" groupname="{{ application }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path | default("{{ playbook_dir }}") }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
-  with_items: "{{ jumphost_instances.instances | map (attribute='private_ip_address') | list }}"
+- name: JUMPHOST (AWS) | building {{ application }} host group
+  add_host: hostname="{{ item.private_ip_address }}" groupname="{{ application }}" ansible_user="{{ user }}" ansible_ssh_private_key_file="{{ key_path | default("{{ playbook_dir }}") }}/{{ cloud }}-{{ region }}-{{ project }}-{{ application }}-{{ domain }}-private-key.pem"
+  with_items: "{{ jumphost_instances.instances }}"
   when:
     - cloud == 'aws'
     - jumphost_instances is defined
