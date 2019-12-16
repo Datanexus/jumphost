@@ -7,15 +7,27 @@
 - name: JUMPHOST | launching VM
   tags:
     - vm
+  vars:
+    tag_dictionary:
+      'Name': "{{ project }}_{{ application }}"
+      'Tenant': "{{ tenant }}"
+      'Cloud': "{{ cloud }}"
+      'Project': "{{ project }}"
+      'Domain': "{{ domain }}"
+      'Application': "{{ application }}"
+      'Role': "{{ ec2_tag_Role }}"
   vars_files:
-    - vars/jumphost.yml
+    - "{{ tenant_config_path }}/config/applications/jumphost.yml"
+    - "{{ tenant_config_path }}/config/site.yml"
+    - "{{ tenant_config_path }}/config/{{ project }}.yml"
+    - "{{ tenant_config_path }}/config/{{ domain }}.yml"
   hosts: localhost
   connection: local
   gather_facts: yes
   tasks:
-    - include_vars: "{{ configuration }}"
-      when: configuration is defined
-      
+    # - include_vars: "{{ configuration }}"
+  #     when: configuration is defined
+  #
     - include_role:
         name: aws
       when: cloud == 'aws'
@@ -31,6 +43,11 @@
     - vm
     - jumphost
   hosts: localhost
+  vars_files:
+    - "{{ tenant_config_path }}/config/applications/jumphost.yml"
+    - "{{ tenant_config_path }}/config/site.yml"
+    - "{{ tenant_config_path }}/config/{{ project }}.yml"
+    - "{{ tenant_config_path }}/config/{{ domain }}.yml"
   connection: local
   gather_facts: yes
   tasks:
@@ -57,7 +74,10 @@
     - jumphost
   hosts: "{{ application }}"
   vars_files:
-    - vars/jumphost.yml
+    - "{{ tenant_config_path }}/config/applications/jumphost.yml"
+    - "{{ tenant_config_path }}/config/site.yml"
+    - "{{ tenant_config_path }}/config/{{ project }}.yml"
+    - "{{ tenant_config_path }}/config/{{ domain }}.yml"
   gather_facts: yes
   tasks:
     - include_vars: "{{ configuration }}"
@@ -69,6 +89,6 @@
     - include_role:
         name: jumphost
         
-    - include_role:
-        name: http-proxy
-      when: http_proxy is defined
+    # - include_role:
+ #        name: http-proxy
+ #      when: http_proxy is defined

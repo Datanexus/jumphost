@@ -2,40 +2,67 @@
 #
 # discover VPC information
 ---
-- name: JUMPHOST AWS | retrieving default VPC ID
+- name: JUMPHOST ({{ cloud }}) | retrieving default VPC ID
   local_action:
     module: ec2_vpc_net_facts
     region: "{{ region }}"
     filters:
-      cidr-block: "{{ cidr_block }}"
+      cidr-block: "{{ cidr | default(datanexus.cidr) }}"
   register: specified_vpc
+  when:
+    - cidr is defined
 
-- name: JUMPHOST AWS | retrieving {{ internal_subnet }} ID for {{ cidr_block }} in {{ cloud }} {{ region }}
+- set_fact: 
+    vpc_id: "{{ specified_vpc.vpcs.0.id  }}"
+  when:
+    - specified_vpc.skipped is not defined
+
+- name: JUMPHOST ({{ cloud }}) | retrieving facts for {{ internal_subnet | default(datanexus.internal_subnet) }} in {{ cidr | default(datanexus.cidr) }} in {{ cloud }} {{ region }}
   local_action:
     module: ec2_vpc_subnet_facts
     region: "{{ region }}"
     filters:
-      cidr-block: "{{ internal_subnet }}"
-  register: internal_subnet_result
+      cidr-block: "{{ internal_subnet | default(datanexus.internal_subnet) }}"
+  register: internal_subnet_by_cidr
   when:
     - internal_subnet is defined
 
-- name: JUMPHOST AWS | retrieving {{ external_subnet }} ID for {{ cidr_block }} in {{ cloud }} {{ region }}
-  local_action:
-    module: ec2_vpc_subnet_facts
-    region: "{{ region }}"
-    filters:
-      cidr-block: "{{ external_subnet }}"
-  register: external_subnet_result
-  when:
-    - external_subnet is defined
+- name: CLOUD VPC ({{ cloud }}) | setting private internal subnet to {{ internal_subnet_by_cidr.subnets.0.cidr_block }}
+  set_fact:
+    internal_subnet_result: "{{ internal_subnet_by_cidr }}"
 
-- set_fact:
+- name: CLOUD VPC ({{ cloud }}) | setting internal subnet to {{ internal_subnet_result.subnets.0.cidr_block }}
+  set_fact: 
+    internal_subnet: "{{ internal_subnet_result.subnets.0.cidr_block }}"
+  when: internal_subnet is not defined
+
+- name: CLOUD VPC ({{ cloud }}) | setting internal subnet id to {{ internal_subnet_result.subnets.0.id }}
+  set_fact:
     internal_subnet_id: "{{ internal_subnet_result.subnets.0.id }}"
   when:
     - internal_subnet_result.skipped is not defined
 
-- set_fact:
+- name: JUMPHOST ({{ cloud }}) | retrieving facts for {{ external_subnet | default(datanexus.external_subnet) }} in {{ cidr }} in {{ cloud }} {{ region }}
+  local_action:
+    module: ec2_vpc_subnet_facts
+    region: "{{ region }}"
+    filters:
+      cidr-block: "{{ external_subnet | default(datanexus.external_subnet) }}"
+  register: external_subnet_by_cidr
+  when:
+    - external_subnet is defined
+
+- name: CLOUD VPC ({{ cloud }}) | setting public external subnet to {{ external_subnet_by_cidr.subnets.0.cidr_block }}
+  set_fact:
+    external_subnet_result: "{{ external_subnet_by_cidr }}"
+    
+- name: CLOUD VPC ({{ cloud }}) | setting external subnet to {{ external_subnet_result.subnets.0.cidr_block }}
+  set_fact: 
+    external_subnet: "{{ external_subnet_result.subnets.0.cidr_block }}"
+  when: external_subnet is not defined
+  
+- name: CLOUD VPC ({{ cloud }}) | setting external subnet id to {{ external_subnet_result.subnets.0.id }}
+  set_fact:
     external_subnet_id: "{{ external_subnet_result.subnets.0.id }}"
   when:
     - external_subnet_result.skipped is not defined
