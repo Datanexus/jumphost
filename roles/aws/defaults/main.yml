@@ -1,0 +1,8 @@
+# configuration variables for networks
+datanexus:
+  cidr: 10.10.0.0/16
+  internal_subnet: 10.10.1.0/24
+  external_subnet: 10.10.2.0/24
+restrict_ssh: no   # restrict SSH to private network
+image_base: centos    # use centos as the base image
+public_ip: yes    # assign a publicly routable IP

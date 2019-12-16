@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 # (c) Copyright 2016 DataNexus Inc.  All Rights Reserved.
 
-export application=jumphost
 : "${AWS_PROFILE:=datanexus}" && export AWS_PROFILE="$AWS_PROFILE"    # sets this to a reasonable ~/.aws/credentials default
 : "${AZURE_PROFILE:=datanexus}" && export AZURE_PROFILE="$AZURE_PROFILE"    # sets this to a reasonable ~/.azure/credentials default
 
@@ -17,11 +16,7 @@ else
   export configuration="$1"
 fi
 
-#./initialize -e "configuration=$configuration"
 # likely called by the orchestrator to just pass through everything
 if [ $# -eq 4 ] && [ "$1" = "-e" ]; then
-  ./provision-jumphost "$1" "$2" "$3" "$4"
-# call with just the configuratiojn file in standalone mode 
-elif [ $# -eq 1 ] && [ -f "$1" ] && [ -s "$1" ]; then
-  ./provision-jumphost --tags "vm,$application" -e "configuration=$configuration"
+  ./provision-jumphost "$3" "$4" "$1" "$2"
 fi
